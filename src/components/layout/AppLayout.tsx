@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, UtensilsCrossed, Receipt } from "lucide-react";
+import { LayoutDashboard, UtensilsCrossed, Receipt, History } from "lucide-react";
 import juiceJungleLogo from "@/assets/juice-jungle-logo.jpg";
 
 interface AppLayoutProps {
@@ -11,6 +11,7 @@ const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/menu", icon: UtensilsCrossed, label: "Menu" },
   { to: "/billing", icon: Receipt, label: "Billing" },
+  { to: "/history", icon: History, label: "History" },
 ];
 
 export function AppLayout({ children }: AppLayoutProps) {
