@@ -115,6 +115,7 @@ export type Database = {
       }
       menu_items: {
         Row: {
+          category: string | null
           color: string | null
           created_at: string
           id: string
@@ -124,6 +125,7 @@ export type Database = {
           price: number
         }
         Insert: {
+          category?: string | null
           color?: string | null
           created_at?: string
           id?: string
@@ -133,6 +135,7 @@ export type Database = {
           price: number
         }
         Update: {
+          category?: string | null
           color?: string | null
           created_at?: string
           id?: string

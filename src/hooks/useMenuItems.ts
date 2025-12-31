@@ -20,7 +20,7 @@ export function useMenuItems() {
   });
 
   const addMenuItem = useMutation({
-    mutationFn: async (item: { name: string; price: number; color?: string; image_url?: string }) => {
+    mutationFn: async (item: { name: string; price: number; color?: string; image_url?: string; category?: string }) => {
       const { data, error } = await supabase
         .from("menu_items")
         .insert(item)

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,10 +24,18 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useMenuItems } from "@/hooks/useMenuItems";
-import { MenuItem } from "@/types/pos";
-import { Plus, Pencil, Trash2, Search, Image } from "lucide-react";
+import { MenuItem, MENU_CATEGORIES } from "@/types/pos";
+import { Plus, Pencil, Trash2, Search, Image, Upload, X } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const FRUIT_ICONS = [
   "🍎", "🍊", "🍌", "🍇", "🍉", "🍓", "🍋", "🍑", "🍍", "🥭", 
@@ -51,23 +59,68 @@ interface FormData {
   price: string;
   color: string;
   image_url: string;
+  category: string;
 }
 
 export default function Menu() {
   const { menuItems, isLoading, addMenuItem, updateMenuItem, deleteMenuItem } = useMenuItems();
   const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [formData, setFormData] = useState<FormData>({ 
     name: "", 
     price: "", 
     color: "#22c55e",
-    image_url: ""
+    image_url: "",
+    category: "Juices"
+  });
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const filteredItems = menuItems.filter((item) => {
+    const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase());
+    const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
+    return matchesSearch && matchesCategory;
   });
 
-  const filteredItems = menuItems.filter((item) =>
-    item.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image must be less than 2MB");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from("menu-images")
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("menu-images")
+        .getPublicUrl(fileName);
+
+      setFormData({ ...formData, image_url: publicUrl });
+      toast.success("Image uploaded successfully");
+    } catch (error: any) {
+      toast.error("Failed to upload image: " + error.message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleSubmit = () => {
     const name = formData.name.trim();
@@ -88,7 +141,8 @@ export default function Menu() {
         name, 
         price,
         color: formData.color,
-        image_url: formData.image_url || null
+        image_url: formData.image_url || null,
+        category: formData.category
       });
       setEditingItem(null);
     } else {
@@ -96,11 +150,12 @@ export default function Menu() {
         name, 
         price,
         color: formData.color,
-        image_url: formData.image_url || undefined
+        image_url: formData.image_url || undefined,
+        category: formData.category
       });
       setIsAddDialogOpen(false);
     }
-    setFormData({ name: "", price: "", color: "#22c55e", image_url: "" });
+    setFormData({ name: "", price: "", color: "#22c55e", image_url: "", category: "Juices" });
   };
 
   const openEditDialog = (item: MenuItem) => {
@@ -109,13 +164,14 @@ export default function Menu() {
       name: item.name, 
       price: item.price.toString(),
       color: item.color || "#22c55e",
-      image_url: item.image_url || ""
+      image_url: item.image_url || "",
+      category: item.category || "Juices"
     });
   };
 
   const closeEditDialog = () => {
     setEditingItem(null);
-    setFormData({ name: "", price: "", color: "#22c55e", image_url: "" });
+    setFormData({ name: "", price: "", color: "#22c55e", image_url: "", category: "Juices" });
   };
 
   const handleDelete = (id: string) => {
@@ -129,8 +185,12 @@ export default function Menu() {
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(value);
 
+  const isEmoji = (str: string) => {
+    return /\p{Emoji}/u.test(str) && str.length <= 4;
+  };
+
   const MenuItemForm = () => (
-    <div className="space-y-4 py-4">
+    <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto">
       <div className="space-y-2">
         <Label htmlFor="name">Name</Label>
         <Input
@@ -140,17 +200,37 @@ export default function Menu() {
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
         />
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="price">Price (₹)</Label>
-        <Input
-          id="price"
-          type="number"
-          min="1"
-          step="1"
-          placeholder="e.g., 50"
-          value={formData.price}
-          onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-        />
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="price">Price (₹)</Label>
+          <Input
+            id="price"
+            type="number"
+            min="1"
+            step="1"
+            placeholder="e.g., 50"
+            value={formData.price}
+            onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label>Category</Label>
+          <Select 
+            value={formData.category} 
+            onValueChange={(value) => setFormData({ ...formData, category: value })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              {MENU_CATEGORIES.map((cat) => (
+                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
       
       {/* Color Selection */}
@@ -178,27 +258,57 @@ export default function Menu() {
       <div className="space-y-2">
         <Label className="flex items-center gap-2">
           <Image className="h-4 w-4" />
-          Icon
+          Icon / Image
         </Label>
         <div className="space-y-3">
-          {/* Custom emoji input */}
-          <div className="flex gap-2 items-center">
-            <Input
-              placeholder="Type any emoji..."
-              value={formData.image_url}
-              onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-              className="flex-1"
+          {/* Preview current image */}
+          {formData.image_url && (
+            <div className="flex items-center gap-2 p-2 bg-secondary/50 rounded-lg">
+              {isEmoji(formData.image_url) ? (
+                <span className="text-3xl">{formData.image_url}</span>
+              ) : (
+                <img 
+                  src={formData.image_url} 
+                  alt="Preview" 
+                  className="w-12 h-12 rounded-lg object-cover"
+                />
+              )}
+              <span className="flex-1 text-sm text-muted-foreground truncate">
+                {isEmoji(formData.image_url) ? "Emoji icon" : "Custom image"}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => setFormData({ ...formData, image_url: "" })}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+          
+          {/* Upload button */}
+          <div className="flex gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageUpload}
             />
             <Button
               type="button"
               variant="outline"
-              size="sm"
-              onClick={() => setFormData({ ...formData, image_url: "" })}
+              className="flex-1"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
             >
-              Clear
+              <Upload className="h-4 w-4 mr-2" />
+              {isUploading ? "Uploading..." : "Upload Image"}
             </Button>
           </div>
-          {/* Quick pick icons */}
+          
+          {/* Quick pick emoji icons */}
           <div className="flex flex-wrap gap-1.5 p-3 bg-secondary/50 rounded-lg max-h-28 overflow-y-auto">
             {FRUIT_ICONS.map((emoji) => (
               <button
@@ -245,7 +355,7 @@ export default function Menu() {
                 <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleSubmit} disabled={addMenuItem.isPending}>
+                <Button onClick={handleSubmit} disabled={addMenuItem.isPending || isUploading}>
                   {addMenuItem.isPending ? "Adding..." : "Add Item"}
                 </Button>
               </DialogFooter>
@@ -253,15 +363,28 @@ export default function Menu() {
           </Dialog>
         </div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          <Input
-            placeholder="Search menu items..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
-          />
+        {/* Search and Filter */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+              placeholder="Search menu items..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {MENU_CATEGORIES.map((cat) => (
+                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Menu Items Grid */}
@@ -270,7 +393,9 @@ export default function Menu() {
         ) : filteredItems.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center text-muted-foreground">
-              {search ? "No items match your search" : "No menu items yet. Add your first item!"}
+              {search || categoryFilter !== "all" 
+                ? "No items match your filters" 
+                : "No menu items yet. Add your first item!"}
             </CardContent>
           </Card>
         ) : (
@@ -285,9 +410,20 @@ export default function Menu() {
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2">
                       {item.image_url && (
-                        <span className="text-2xl">{item.image_url}</span>
+                        isEmoji(item.image_url) ? (
+                          <span className="text-2xl">{item.image_url}</span>
+                        ) : (
+                          <img 
+                            src={item.image_url} 
+                            alt={item.name} 
+                            className="w-10 h-10 rounded-lg object-cover"
+                          />
+                        )
                       )}
-                      <CardTitle className="text-lg">{item.name}</CardTitle>
+                      <div>
+                        <CardTitle className="text-lg">{item.name}</CardTitle>
+                        <span className="text-xs text-muted-foreground">{item.category || "Juices"}</span>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Switch
@@ -362,7 +498,7 @@ export default function Menu() {
               <Button variant="outline" onClick={closeEditDialog}>
                 Cancel
               </Button>
-              <Button onClick={handleSubmit} disabled={updateMenuItem.isPending}>
+              <Button onClick={handleSubmit} disabled={updateMenuItem.isPending || isUploading}>
                 {updateMenuItem.isPending ? "Saving..." : "Save Changes"}
               </Button>
             </DialogFooter>

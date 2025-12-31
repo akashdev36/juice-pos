@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useMenuItems } from "@/hooks/useMenuItems";
 import { useBills } from "@/hooks/useBills";
-import { OrderItem, PaymentMethod } from "@/types/pos";
+import { OrderItem, PaymentMethod, MENU_CATEGORIES } from "@/types/pos";
 import { Plus, Minus, Trash2, Search, Banknote, Smartphone, Package } from "lucide-react";
 import { toast } from "sonner";
 
@@ -18,12 +18,19 @@ export default function Billing() {
   const { activeMenuItems, isLoading: menuLoading } = useMenuItems();
   const { createBill } = useBills();
   const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [order, setOrder] = useState<OrderItem[]>([]);
   const [applyParcelToAll, setApplyParcelToAll] = useState(false);
 
-  const filteredItems = activeMenuItems.filter((item) =>
-    item.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredItems = activeMenuItems.filter((item) => {
+    const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase());
+    const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
+    return matchesSearch && matchesCategory;
+  });
+
+  const isEmoji = (str: string) => {
+    return /\p{Emoji}/u.test(str) && str.length <= 4;
+  };
 
   const addToOrder = (menuItem: typeof activeMenuItems[0]) => {
     setOrder((prev) => {
@@ -127,8 +134,8 @@ export default function Billing() {
       <div className="grid lg:grid-cols-2 gap-6 animate-fade-in">
         {/* Menu Panel */}
         <div className="space-y-4">
-          <div>
-            <h2 className="text-xl font-bold text-foreground mb-2">Menu</h2>
+          <div className="space-y-3">
+            <h2 className="text-xl font-bold text-foreground">Menu</h2>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
@@ -138,12 +145,34 @@ export default function Billing() {
                 className="pl-10"
               />
             </div>
+            {/* Category Tabs */}
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              <Button
+                variant={categoryFilter === "all" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCategoryFilter("all")}
+                className="whitespace-nowrap"
+              >
+                All
+              </Button>
+              {MENU_CATEGORIES.map((cat) => (
+                <Button
+                  key={cat}
+                  variant={categoryFilter === cat ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCategoryFilter(cat)}
+                  className="whitespace-nowrap"
+                >
+                  {cat}
+                </Button>
+              ))}
+            </div>
           </div>
 
           {menuLoading ? (
             <div className="text-center py-8 text-muted-foreground">Loading menu...</div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[calc(100vh-300px)] overflow-y-auto">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[calc(100vh-380px)] overflow-y-auto">
               {filteredItems.map((item) => {
                 const itemColor = item.color || "#22c55e";
                 return (
@@ -158,7 +187,15 @@ export default function Billing() {
                     onClick={() => addToOrder(item)}
                   >
                     {item.image_url && (
-                      <span className="text-2xl">{item.image_url}</span>
+                      isEmoji(item.image_url) ? (
+                        <span className="text-2xl">{item.image_url}</span>
+                      ) : (
+                        <img 
+                          src={item.image_url} 
+                          alt={item.name} 
+                          className="w-10 h-10 rounded-lg object-cover"
+                        />
+                      )
                     )}
                     <span className="font-medium text-sm text-center">{item.name}</span>
                     <span 
@@ -172,7 +209,7 @@ export default function Billing() {
               })}
               {filteredItems.length === 0 && (
                 <div className="col-span-full text-center py-8 text-muted-foreground">
-                  {search ? "No items match your search" : "No active menu items"}
+                  {search || categoryFilter !== "all" ? "No items match your filters" : "No active menu items"}
                 </div>
               )}
             </div>
