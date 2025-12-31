@@ -3,6 +3,8 @@ export interface MenuItem {
   name: string;
   price: number;
   is_active: boolean;
+  color: string | null;
+  image_url: string | null;
   created_at: string;
 }
 
