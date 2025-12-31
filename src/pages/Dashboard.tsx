@@ -93,22 +93,30 @@ export default function Dashboard() {
   return (
     <AppLayout>
       <div className="space-y-6 animate-fade-in">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-            <p className="text-muted-foreground">
-              {new Date().toLocaleDateString("en-IN", {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </p>
+        {/* Header with fruit pattern background */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/20 via-accent/10 to-primary/20 p-6">
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-2 right-8 text-6xl">🍊</div>
+            <div className="absolute top-6 left-16 text-5xl">🥤</div>
+            <div className="absolute bottom-2 right-1/3 text-4xl">🍓</div>
+            <div className="absolute bottom-4 left-4 text-5xl">🍍</div>
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <RefreshCw className="h-4 w-4" />
-            Last updated: {lastUpdated.toLocaleTimeString()}
+          <div className="relative z-10 flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+              <p className="text-muted-foreground">
+                {new Date().toLocaleDateString("en-IN", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-background/50 px-3 py-1 rounded-full">
+              <RefreshCw className="h-4 w-4" />
+              {lastUpdated.toLocaleTimeString()}
+            </div>
           </div>
         </div>
 

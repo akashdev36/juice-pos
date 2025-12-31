@@ -367,12 +367,19 @@ export default function Menu() {
   return (
     <AppLayout>
       <div className="space-y-6 animate-fade-in">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Menu Management</h1>
-            <p className="text-muted-foreground">Manage your juice menu items</p>
+        {/* Header with fruit pattern background */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/20 via-accent/10 to-primary/20 p-6">
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-2 left-8 text-6xl">🍌</div>
+            <div className="absolute top-4 right-16 text-5xl">🥝</div>
+            <div className="absolute bottom-2 left-1/3 text-4xl">🍇</div>
+            <div className="absolute bottom-4 right-8 text-5xl">🍋</div>
           </div>
+          <div className="relative z-10 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Menu Management</h1>
+              <p className="text-muted-foreground">Manage your juice menu items</p>
+            </div>
           <div className="flex gap-2">
             <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
               <DialogTrigger asChild>
@@ -488,6 +495,7 @@ export default function Menu() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+          </div>
           </div>
         </div>
 
