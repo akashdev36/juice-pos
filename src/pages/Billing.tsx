@@ -144,26 +144,32 @@ export default function Billing() {
             <div className="text-center py-8 text-muted-foreground">Loading menu...</div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[calc(100vh-300px)] overflow-y-auto">
-              {filteredItems.map((item) => (
-                <Button
-                  key={item.id}
-                  variant="outline"
-                  className="h-auto py-4 px-3 flex flex-col items-center gap-1 touch-action-manipulation hover:bg-accent border-2"
-                  style={{ borderColor: item.color || "#22c55e" }}
-                  onClick={() => addToOrder(item)}
-                >
-                  {item.image_url && (
-                    <span className="text-2xl">{item.image_url}</span>
-                  )}
-                  <span className="font-medium text-sm text-center">{item.name}</span>
-                  <span 
-                    className="font-bold"
-                    style={{ color: item.color || "hsl(var(--primary))" }}
+              {filteredItems.map((item) => {
+                const itemColor = item.color || "#22c55e";
+                return (
+                  <Button
+                    key={item.id}
+                    variant="outline"
+                    className="h-auto py-4 px-3 flex flex-col items-center gap-1 touch-action-manipulation border-2 transition-all hover:scale-[1.02]"
+                    style={{ 
+                      borderColor: itemColor,
+                      backgroundColor: `${itemColor}15`,
+                    }}
+                    onClick={() => addToOrder(item)}
                   >
-                    {formatCurrency(Number(item.price))}
-                  </span>
-                </Button>
-              ))}
+                    {item.image_url && (
+                      <span className="text-2xl">{item.image_url}</span>
+                    )}
+                    <span className="font-medium text-sm text-center">{item.name}</span>
+                    <span 
+                      className="font-bold"
+                      style={{ color: itemColor }}
+                    >
+                      {formatCurrency(Number(item.price))}
+                    </span>
+                  </Button>
+                );
+              })}
               {filteredItems.length === 0 && (
                 <div className="col-span-full text-center py-8 text-muted-foreground">
                   {search ? "No items match your search" : "No active menu items"}

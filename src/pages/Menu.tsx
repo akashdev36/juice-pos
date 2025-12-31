@@ -30,21 +30,9 @@ import { Plus, Pencil, Trash2, Search, Image } from "lucide-react";
 import { toast } from "sonner";
 
 const FRUIT_ICONS = [
-  { name: "Apple", emoji: "🍎" },
-  { name: "Orange", emoji: "🍊" },
-  { name: "Banana", emoji: "🍌" },
-  { name: "Grapes", emoji: "🍇" },
-  { name: "Watermelon", emoji: "🍉" },
-  { name: "Strawberry", emoji: "🍓" },
-  { name: "Lemon", emoji: "🍋" },
-  { name: "Peach", emoji: "🍑" },
-  { name: "Pineapple", emoji: "🍍" },
-  { name: "Mango", emoji: "🥭" },
-  { name: "Coconut", emoji: "🥥" },
-  { name: "Kiwi", emoji: "🥝" },
-  { name: "Avocado", emoji: "🥑" },
-  { name: "Cherry", emoji: "🍒" },
-  { name: "Blueberry", emoji: "🫐" },
+  "🍎", "🍊", "🍌", "🍇", "🍉", "🍓", "🍋", "🍑", "🍍", "🥭", 
+  "🥥", "🥝", "🥑", "🍒", "🫐", "🍐", "🍈", "🥒", "🥕", "🍅",
+  "🥬", "🥦", "🌽", "🧃", "🥤", "🧊", "🍵", "☕", "🥛", "🍯"
 ];
 
 const COLOR_OPTIONS = [
@@ -192,33 +180,41 @@ export default function Menu() {
           <Image className="h-4 w-4" />
           Icon
         </Label>
-        <div className="flex flex-wrap gap-2 p-3 bg-secondary/50 rounded-lg max-h-32 overflow-y-auto">
-          <button
-            type="button"
-            className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center transition-all ${
-              !formData.image_url 
-                ? "border-primary bg-primary/10" 
-                : "border-border hover:border-primary/50"
-            }`}
-            onClick={() => setFormData({ ...formData, image_url: "" })}
-          >
-            <span className="text-muted-foreground text-xs">None</span>
-          </button>
-          {FRUIT_ICONS.map((icon) => (
-            <button
-              key={icon.emoji}
+        <div className="space-y-3">
+          {/* Custom emoji input */}
+          <div className="flex gap-2 items-center">
+            <Input
+              placeholder="Type any emoji..."
+              value={formData.image_url}
+              onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+              className="flex-1"
+            />
+            <Button
               type="button"
-              className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center text-2xl transition-all ${
-                formData.image_url === icon.emoji 
-                  ? "border-primary bg-primary/10" 
-                  : "border-border hover:border-primary/50"
-              }`}
-              onClick={() => setFormData({ ...formData, image_url: icon.emoji })}
-              title={icon.name}
+              variant="outline"
+              size="sm"
+              onClick={() => setFormData({ ...formData, image_url: "" })}
             >
-              {icon.emoji}
-            </button>
-          ))}
+              Clear
+            </Button>
+          </div>
+          {/* Quick pick icons */}
+          <div className="flex flex-wrap gap-1.5 p-3 bg-secondary/50 rounded-lg max-h-28 overflow-y-auto">
+            {FRUIT_ICONS.map((emoji) => (
+              <button
+                key={emoji}
+                type="button"
+                className={`w-9 h-9 rounded-lg border-2 flex items-center justify-center text-xl transition-all ${
+                  formData.image_url === emoji 
+                    ? "border-primary bg-primary/10" 
+                    : "border-border hover:border-primary/50"
+                }`}
+                onClick={() => setFormData({ ...formData, image_url: emoji })}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>
