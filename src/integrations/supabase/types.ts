@@ -14,7 +14,129 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bill_items: {
+        Row: {
+          bill_id: string
+          created_at: string
+          id: string
+          is_parcel: boolean
+          line_subtotal: number
+          line_total: number
+          menu_item_id: string
+          parcel_charge_per_unit: number
+          parcel_quantity: number
+          parcel_total: number
+          price_per_unit: number
+          quantity: number
+        }
+        Insert: {
+          bill_id: string
+          created_at?: string
+          id?: string
+          is_parcel?: boolean
+          line_subtotal: number
+          line_total: number
+          menu_item_id: string
+          parcel_charge_per_unit?: number
+          parcel_quantity?: number
+          parcel_total?: number
+          price_per_unit: number
+          quantity: number
+        }
+        Update: {
+          bill_id?: string
+          created_at?: string
+          id?: string
+          is_parcel?: boolean
+          line_subtotal?: number
+          line_total?: number
+          menu_item_id?: string
+          parcel_charge_per_unit?: number
+          parcel_quantity?: number
+          parcel_total?: number
+          price_per_unit?: number
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bill_items_bill_id_fkey"
+            columns: ["bill_id"]
+            isOneToOne: false
+            referencedRelation: "bills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bill_items_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bills: {
+        Row: {
+          apply_parcel_to_all: boolean
+          bill_number: number
+          business_date: string
+          created_at: string
+          date_time: string
+          id: string
+          payment_method: string
+          subtotal: number
+          total_amount: number
+          total_parcel_collected: number
+        }
+        Insert: {
+          apply_parcel_to_all?: boolean
+          bill_number?: number
+          business_date?: string
+          created_at?: string
+          date_time?: string
+          id?: string
+          payment_method: string
+          subtotal?: number
+          total_amount?: number
+          total_parcel_collected?: number
+        }
+        Update: {
+          apply_parcel_to_all?: boolean
+          bill_number?: number
+          business_date?: string
+          created_at?: string
+          date_time?: string
+          id?: string
+          payment_method?: string
+          subtotal?: number
+          total_amount?: number
+          total_parcel_collected?: number
+        }
+        Relationships: []
+      }
+      menu_items: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          price: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
