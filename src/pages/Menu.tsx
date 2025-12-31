@@ -32,8 +32,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useMenuItems } from "@/hooks/useMenuItems";
-import { MenuItem, MENU_CATEGORIES } from "@/types/pos";
-import { Plus, Pencil, Trash2, Search, Image, Upload, X } from "lucide-react";
+import { useCategories } from "@/hooks/useCategories";
+import { MenuItem } from "@/types/pos";
+import { Plus, Pencil, Trash2, Search, Image, Upload, X, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -64,6 +65,7 @@ interface FormData {
 
 export default function Menu() {
   const { menuItems, isLoading, addMenuItem, updateMenuItem, deleteMenuItem } = useMenuItems();
+  const { categories, addCategory, updateCategory, deleteCategory } = useCategories();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -73,10 +75,15 @@ export default function Menu() {
     price: "", 
     color: "#22c55e",
     image_url: "",
-    category: "Juices"
+    category: ""
   });
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Category management state
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [editingCategory, setEditingCategory] = useState<{ id: string; name: string } | null>(null);
 
   const filteredItems = menuItems.filter((item) => {
     const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase());
@@ -142,7 +149,7 @@ export default function Menu() {
         price,
         color: formData.color,
         image_url: formData.image_url || null,
-        category: formData.category
+        category: formData.category || null
       });
       setEditingItem(null);
     } else {
@@ -151,11 +158,11 @@ export default function Menu() {
         price,
         color: formData.color,
         image_url: formData.image_url || undefined,
-        category: formData.category
+        category: formData.category || undefined
       });
       setIsAddDialogOpen(false);
     }
-    setFormData({ name: "", price: "", color: "#22c55e", image_url: "", category: "Juices" });
+    setFormData({ name: "", price: "", color: "#22c55e", image_url: "", category: "" });
   };
 
   const openEditDialog = (item: MenuItem) => {
@@ -165,13 +172,13 @@ export default function Menu() {
       price: item.price.toString(),
       color: item.color || "#22c55e",
       image_url: item.image_url || "",
-      category: item.category || "Juices"
+      category: item.category || ""
     });
   };
 
   const closeEditDialog = () => {
     setEditingItem(null);
-    setFormData({ name: "", price: "", color: "#22c55e", image_url: "", category: "Juices" });
+    setFormData({ name: "", price: "", color: "#22c55e", image_url: "", category: "" });
   };
 
   const handleDelete = (id: string) => {
@@ -187,6 +194,33 @@ export default function Menu() {
 
   const isEmoji = (str: string) => {
     return /\p{Emoji}/u.test(str) && str.length <= 4;
+  };
+
+  const handleAddCategory = () => {
+    const name = newCategoryName.trim();
+    if (!name) {
+      toast.error("Please enter a category name");
+      return;
+    }
+    addCategory.mutate(name, {
+      onSuccess: () => setNewCategoryName("")
+    });
+  };
+
+  const handleUpdateCategory = () => {
+    if (!editingCategory) return;
+    const name = editingCategory.name.trim();
+    if (!name) {
+      toast.error("Please enter a category name");
+      return;
+    }
+    updateCategory.mutate({ id: editingCategory.id, name }, {
+      onSuccess: () => setEditingCategory(null)
+    });
+  };
+
+  const handleDeleteCategory = (id: string) => {
+    deleteCategory.mutate(id);
   };
 
   const MenuItemForm = () => (
@@ -225,8 +259,8 @@ export default function Menu() {
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
             <SelectContent>
-              {MENU_CATEGORIES.map((cat) => (
-                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -339,28 +373,122 @@ export default function Menu() {
             <h1 className="text-2xl font-bold text-foreground">Menu Management</h1>
             <p className="text-muted-foreground">Manage your juice menu items</p>
           </div>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="touch-action-manipulation">
-                <Plus className="h-5 w-5 mr-2" />
-                Add Item
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Add Menu Item</DialogTitle>
-              </DialogHeader>
-              <MenuItemForm />
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                  Cancel
+          <div className="flex gap-2">
+            <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="touch-action-manipulation">
+                  <Settings className="h-5 w-5 mr-2" />
+                  Categories
                 </Button>
-                <Button onClick={handleSubmit} disabled={addMenuItem.isPending || isUploading}>
-                  {addMenuItem.isPending ? "Adding..." : "Add Item"}
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Manage Categories</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  {/* Add new category */}
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="New category name..."
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleAddCategory()}
+                    />
+                    <Button onClick={handleAddCategory} disabled={addCategory.isPending}>
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
+                  {/* Category list */}
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {categories.map((cat) => (
+                      <div key={cat.id} className="flex items-center gap-2 p-2 bg-secondary/50 rounded-lg">
+                        {editingCategory?.id === cat.id ? (
+                          <>
+                            <Input
+                              value={editingCategory.name}
+                              onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
+                              onKeyDown={(e) => e.key === "Enter" && handleUpdateCategory()}
+                              className="flex-1"
+                            />
+                            <Button size="icon" variant="ghost" onClick={handleUpdateCategory}>
+                              ✓
+                            </Button>
+                            <Button size="icon" variant="ghost" onClick={() => setEditingCategory(null)}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <span className="flex-1 font-medium">{cat.name}</span>
+                            <Button 
+                              size="icon" 
+                              variant="ghost"
+                              onClick={() => setEditingCategory({ id: cat.id, name: cat.name })}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button size="icon" variant="ghost" className="text-destructive">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete "{cat.name}"?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will delete the category. Menu items in this category will remain but become uncategorized.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteCategory(cat.id)}
+                                    className="bg-destructive hover:bg-destructive/90"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                    {categories.length === 0 && (
+                      <p className="text-center text-muted-foreground py-4">
+                        No categories yet. Add your first category above.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+            
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="touch-action-manipulation">
+                  <Plus className="h-5 w-5 mr-2" />
+                  Add Item
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Add Menu Item</DialogTitle>
+                </DialogHeader>
+                <MenuItemForm />
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSubmit} disabled={addMenuItem.isPending || isUploading}>
+                    {addMenuItem.isPending ? "Adding..." : "Add Item"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {/* Search and Filter */}
@@ -380,8 +508,8 @@ export default function Menu() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
-              {MENU_CATEGORIES.map((cat) => (
-                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -422,7 +550,7 @@ export default function Menu() {
                       )}
                       <div>
                         <CardTitle className="text-lg">{item.name}</CardTitle>
-                        <span className="text-xs text-muted-foreground">{item.category || "Juices"}</span>
+                        <span className="text-xs text-muted-foreground">{item.category || "Uncategorized"}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">

@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useMenuItems } from "@/hooks/useMenuItems";
 import { useBills } from "@/hooks/useBills";
-import { OrderItem, PaymentMethod, MENU_CATEGORIES } from "@/types/pos";
+import { useCategories } from "@/hooks/useCategories";
+import { OrderItem, PaymentMethod } from "@/types/pos";
 import { Plus, Minus, Trash2, Search, Banknote, Smartphone, Package } from "lucide-react";
 import { toast } from "sonner";
 
@@ -17,6 +18,7 @@ const PARCEL_CHARGE = 5;
 export default function Billing() {
   const { activeMenuItems, isLoading: menuLoading } = useMenuItems();
   const { createBill } = useBills();
+  const { categories } = useCategories();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [order, setOrder] = useState<OrderItem[]>([]);
@@ -155,15 +157,15 @@ export default function Billing() {
               >
                 All
               </Button>
-              {MENU_CATEGORIES.map((cat) => (
+              {categories.map((cat) => (
                 <Button
-                  key={cat}
-                  variant={categoryFilter === cat ? "default" : "outline"}
+                  key={cat.id}
+                  variant={categoryFilter === cat.name ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setCategoryFilter(cat)}
+                  onClick={() => setCategoryFilter(cat.name)}
                   className="whitespace-nowrap"
                 >
-                  {cat}
+                  {cat.name}
                 </Button>
               ))}
             </div>

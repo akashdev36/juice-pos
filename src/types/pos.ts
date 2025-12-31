@@ -9,14 +9,6 @@ export interface MenuItem {
   created_at: string;
 }
 
-export const MENU_CATEGORIES = [
-  "Juices",
-  "Smoothies", 
-  "Milkshakes",
-  "Mocktails",
-  "Specials"
-] as const;
-
 export interface OrderItem {
   menuItem: MenuItem;
   quantity: number;
