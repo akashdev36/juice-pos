@@ -148,11 +148,18 @@ export default function Billing() {
                 <Button
                   key={item.id}
                   variant="outline"
-                  className="h-auto py-4 px-3 flex flex-col items-center gap-1 touch-action-manipulation hover:bg-accent"
+                  className="h-auto py-4 px-3 flex flex-col items-center gap-1 touch-action-manipulation hover:bg-accent border-2"
+                  style={{ borderColor: item.color || "#22c55e" }}
                   onClick={() => addToOrder(item)}
                 >
+                  {item.image_url && (
+                    <span className="text-2xl">{item.image_url}</span>
+                  )}
                   <span className="font-medium text-sm text-center">{item.name}</span>
-                  <span className="text-primary font-bold">
+                  <span 
+                    className="font-bold"
+                    style={{ color: item.color || "hsl(var(--primary))" }}
+                  >
                     {formatCurrency(Number(item.price))}
                   </span>
                 </Button>

@@ -26,15 +26,56 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useMenuItems } from "@/hooks/useMenuItems";
 import { MenuItem } from "@/types/pos";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Image } from "lucide-react";
 import { toast } from "sonner";
+
+const FRUIT_ICONS = [
+  { name: "Apple", emoji: "🍎" },
+  { name: "Orange", emoji: "🍊" },
+  { name: "Banana", emoji: "🍌" },
+  { name: "Grapes", emoji: "🍇" },
+  { name: "Watermelon", emoji: "🍉" },
+  { name: "Strawberry", emoji: "🍓" },
+  { name: "Lemon", emoji: "🍋" },
+  { name: "Peach", emoji: "🍑" },
+  { name: "Pineapple", emoji: "🍍" },
+  { name: "Mango", emoji: "🥭" },
+  { name: "Coconut", emoji: "🥥" },
+  { name: "Kiwi", emoji: "🥝" },
+  { name: "Avocado", emoji: "🥑" },
+  { name: "Cherry", emoji: "🍒" },
+  { name: "Blueberry", emoji: "🫐" },
+];
+
+const COLOR_OPTIONS = [
+  { name: "Green", value: "#22c55e" },
+  { name: "Orange", value: "#f97316" },
+  { name: "Yellow", value: "#eab308" },
+  { name: "Red", value: "#ef4444" },
+  { name: "Pink", value: "#ec4899" },
+  { name: "Purple", value: "#a855f7" },
+  { name: "Blue", value: "#3b82f6" },
+  { name: "Teal", value: "#14b8a6" },
+];
+
+interface FormData {
+  name: string;
+  price: string;
+  color: string;
+  image_url: string;
+}
 
 export default function Menu() {
   const { menuItems, isLoading, addMenuItem, updateMenuItem, deleteMenuItem } = useMenuItems();
   const [search, setSearch] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
-  const [formData, setFormData] = useState({ name: "", price: "" });
+  const [formData, setFormData] = useState<FormData>({ 
+    name: "", 
+    price: "", 
+    color: "#22c55e",
+    image_url: ""
+  });
 
   const filteredItems = menuItems.filter((item) =>
     item.name.toLowerCase().includes(search.toLowerCase())
@@ -54,23 +95,39 @@ export default function Menu() {
     }
 
     if (editingItem) {
-      updateMenuItem.mutate({ id: editingItem.id, name, price });
+      updateMenuItem.mutate({ 
+        id: editingItem.id, 
+        name, 
+        price,
+        color: formData.color,
+        image_url: formData.image_url || null
+      });
       setEditingItem(null);
     } else {
-      addMenuItem.mutate({ name, price });
+      addMenuItem.mutate({ 
+        name, 
+        price,
+        color: formData.color,
+        image_url: formData.image_url || undefined
+      });
       setIsAddDialogOpen(false);
     }
-    setFormData({ name: "", price: "" });
+    setFormData({ name: "", price: "", color: "#22c55e", image_url: "" });
   };
 
   const openEditDialog = (item: MenuItem) => {
     setEditingItem(item);
-    setFormData({ name: item.name, price: item.price.toString() });
+    setFormData({ 
+      name: item.name, 
+      price: item.price.toString(),
+      color: item.color || "#22c55e",
+      image_url: item.image_url || ""
+    });
   };
 
   const closeEditDialog = () => {
     setEditingItem(null);
-    setFormData({ name: "", price: "" });
+    setFormData({ name: "", price: "", color: "#22c55e", image_url: "" });
   };
 
   const handleDelete = (id: string) => {
@@ -83,6 +140,89 @@ export default function Menu() {
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(value);
+
+  const MenuItemForm = () => (
+    <div className="space-y-4 py-4">
+      <div className="space-y-2">
+        <Label htmlFor="name">Name</Label>
+        <Input
+          id="name"
+          placeholder="e.g., Orange Juice"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="price">Price (₹)</Label>
+        <Input
+          id="price"
+          type="number"
+          min="1"
+          step="1"
+          placeholder="e.g., 50"
+          value={formData.price}
+          onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+        />
+      </div>
+      
+      {/* Color Selection */}
+      <div className="space-y-2">
+        <Label>Color</Label>
+        <div className="flex flex-wrap gap-2">
+          {COLOR_OPTIONS.map((color) => (
+            <button
+              key={color.value}
+              type="button"
+              className={`w-8 h-8 rounded-full border-2 transition-all ${
+                formData.color === color.value 
+                  ? "border-foreground scale-110" 
+                  : "border-transparent"
+              }`}
+              style={{ backgroundColor: color.value }}
+              onClick={() => setFormData({ ...formData, color: color.value })}
+              title={color.name}
+            />
+          ))}
+        </div>
+      </div>
+      
+      {/* Icon/Image Selection */}
+      <div className="space-y-2">
+        <Label className="flex items-center gap-2">
+          <Image className="h-4 w-4" />
+          Icon
+        </Label>
+        <div className="flex flex-wrap gap-2 p-3 bg-secondary/50 rounded-lg max-h-32 overflow-y-auto">
+          <button
+            type="button"
+            className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center transition-all ${
+              !formData.image_url 
+                ? "border-primary bg-primary/10" 
+                : "border-border hover:border-primary/50"
+            }`}
+            onClick={() => setFormData({ ...formData, image_url: "" })}
+          >
+            <span className="text-muted-foreground text-xs">None</span>
+          </button>
+          {FRUIT_ICONS.map((icon) => (
+            <button
+              key={icon.emoji}
+              type="button"
+              className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center text-2xl transition-all ${
+                formData.image_url === icon.emoji 
+                  ? "border-primary bg-primary/10" 
+                  : "border-border hover:border-primary/50"
+              }`}
+              onClick={() => setFormData({ ...formData, image_url: icon.emoji })}
+              title={icon.name}
+            >
+              {icon.emoji}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <AppLayout>
@@ -100,33 +240,11 @@ export default function Menu() {
                 Add Item
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>Add Menu Item</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    placeholder="e.g., Orange Juice"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="price">Price (₹)</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    min="1"
-                    step="1"
-                    placeholder="e.g., 50"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  />
-                </div>
-              </div>
+              <MenuItemForm />
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                   Cancel
@@ -165,10 +283,16 @@ export default function Menu() {
               <Card
                 key={item.id}
                 className={`shadow-md transition-opacity ${!item.is_active ? "opacity-60" : ""}`}
+                style={{ borderLeftWidth: "4px", borderLeftColor: item.color || "#22c55e" }}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
-                    <CardTitle className="text-lg">{item.name}</CardTitle>
+                    <div className="flex items-center gap-2">
+                      {item.image_url && (
+                        <span className="text-2xl">{item.image_url}</span>
+                      )}
+                      <CardTitle className="text-lg">{item.name}</CardTitle>
+                    </div>
                     <div className="flex items-center gap-2">
                       <Switch
                         checked={item.is_active}
@@ -179,7 +303,10 @@ export default function Menu() {
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold text-primary">
+                    <span 
+                      className="text-2xl font-bold"
+                      style={{ color: item.color || "hsl(var(--primary))" }}
+                    >
                       {formatCurrency(Number(item.price))}
                     </span>
                     <div className="flex gap-2">
@@ -230,31 +357,11 @@ export default function Menu() {
 
         {/* Edit Dialog */}
         <Dialog open={!!editingItem} onOpenChange={(open) => !open && closeEditDialog()}>
-          <DialogContent>
+          <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Edit Menu Item</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-name">Name</Label>
-                <Input
-                  id="edit-name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-price">Price (₹)</Label>
-                <Input
-                  id="edit-price"
-                  type="number"
-                  min="1"
-                  step="1"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                />
-              </div>
-            </div>
+            <MenuItemForm />
             <DialogFooter>
               <Button variant="outline" onClick={closeEditDialog}>
                 Cancel

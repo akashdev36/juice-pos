@@ -115,22 +115,28 @@ export type Database = {
       }
       menu_items: {
         Row: {
+          color: string | null
           created_at: string
           id: string
+          image_url: string | null
           is_active: boolean
           name: string
           price: number
         }
         Insert: {
+          color?: string | null
           created_at?: string
           id?: string
+          image_url?: string | null
           is_active?: boolean
           name: string
           price: number
         }
         Update: {
+          color?: string | null
           created_at?: string
           id?: string
+          image_url?: string | null
           is_active?: boolean
           name?: string
           price?: number
