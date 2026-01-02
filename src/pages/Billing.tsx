@@ -13,6 +13,7 @@ import { useCategories } from "@/hooks/useCategories";
 import { OrderItem, PaymentMethod } from "@/types/pos";
 import { Plus, Minus, Trash2, Search, Banknote, Smartphone, Package, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
+import billingBg from "@/assets/billing-bg.jpg";
 
 const PARCEL_CHARGE = 5;
 
@@ -151,9 +152,18 @@ export default function Billing() {
 
   return (
     <AppLayout>
-      <div className="grid lg:grid-cols-5 gap-4 h-[calc(100vh-100px)] animate-fade-in">
-        {/* Menu Panel - Takes 3 columns */}
-        <div className="lg:col-span-3 flex flex-col bg-card rounded-xl p-4 shadow-sm border border-border">
+      <div 
+        className="min-h-[calc(100vh-100px)] -m-4 md:-m-6 p-4 md:p-6"
+        style={{
+          backgroundImage: `url(${billingBg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed',
+        }}
+      >
+        <div className="grid lg:grid-cols-5 gap-4 h-[calc(100vh-100px)] animate-fade-in">
+          {/* Menu Panel - Takes 3 columns */}
+          <div className="lg:col-span-3 flex flex-col bg-card/95 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-border">
           {/* Search and filters */}
           <div className="space-y-3 mb-4">
             <div className="relative">
@@ -424,6 +434,7 @@ export default function Billing() {
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
     </AppLayout>
   );
